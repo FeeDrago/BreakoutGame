@@ -15,6 +15,7 @@ FONT = pygame.font.SysFont('comicsans', 100)
 
 
 
+
 def create_blocks() ->list:
     blocks = [[] for row in range(NUM_OF_ROWS)]
     for row_index, row in enumerate(blocks):
@@ -54,10 +55,14 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
         for block in row:
             if block.colliderect(ball):
                 points += COLOR_POINTS[row_index]
-                print(points)
                 BALL_VEL[1] *= -1
                 row.remove(block)
                 BRICK_SOUND.play()
+
+    # Check for lost ball
+    
+
+    
     return points
             
 
