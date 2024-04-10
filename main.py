@@ -4,14 +4,16 @@ from constants import *
 # Initialization
 pygame.font.init()
 pygame.mixer.init()
+WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Breakout")
+# SOUNDS
 LOST_SOUND = pygame.mixer.Sound(r'./Sounds/lost.mp3')
 PADDLE_SOUND = pygame.mixer.Sound(r'./Sounds/paddle.mp3')
 WALL_SOUND = pygame.mixer.Sound(r'./Sounds/wall.mp3')
 BRICK_SOUND = pygame.mixer.Sound(r'./Sounds/brick.mp3')
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Breakout")
+# FONTS
 FONT = pygame.font.SysFont('comicsans', 100)
-
+GAME_OVER_FONT = pygame.font.SysFont('comicsans', 25)
 
 
 
@@ -31,6 +33,7 @@ def handle_paddle_movement(keys_pressed, paddle):
     
 
 def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, points:int, lifes:int):
+    global BALL_VEL
     ball.x -= BALL_VEL[0]
     ball.y -= BALL_VEL[1]
 
@@ -65,8 +68,11 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
         # Reset ball and paddle
         ball.x, ball.y =(WIDTH - BALL_RAD)//2, HEIGHT - 2*PADY - PADDLE_HEIGHT - BALL_RAD
         paddle.x, paddle.y  = (WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY
-        BALL_VEL[0] = abs(BALL_VEL[0])
-        BALL_VEL[1] = abs(BALL_VEL[1])
+        if lifes > 0:
+            BALL_VEL[0] = abs(BALL_VEL[0])
+            BALL_VEL[1] = abs(BALL_VEL[1])
+        else: 
+            BALL_VEL = [0, 0]
 
     
     return points, lifes
@@ -88,19 +94,18 @@ def draw_window(blocks, points,lifes,  paddle, ball):
     for row_index, row in enumerate(blocks):
         for block in row:
             pygame.draw.rect(WIN, COLORS[row_index], block)
-    
+        
     # Draw Paddle
     pygame.draw.rect(WIN, PADDLE_COLOR, paddle)
 
     # Draw Ball
     pygame.draw.circle(WIN,color=WHITE, center=(int(ball.x + ball.width / 2), int(ball.y + ball.height / 2)), radius=BALL_RAD)
 
-
-
-
     pygame.display.update()
 
 def main():
+    global BALL_VEL, VEL_X, VEL_Y
+    BALL_VEL = [VEL_X, VEL_Y]
     points = 0
     lifes = STARTING_LIFES
     paddle = pygame.Rect((WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY, PADDLE_WIDTH, PADDLE_HEIGHT)
@@ -124,7 +129,34 @@ def main():
         draw_window(blocks, points,lifes,  paddle, ball)
 
         # TODO: Check if player lost.
+        if lifes == 0:
+            LOST_SOUND.play()
+            game_over_text = GAME_OVER_FONT.render('You Lost! Press ESC to exit or any other key to play again.', 1, WHITE)
+            WIN.blit(game_over_text, ((WIDTH - game_over_text.get_width()) // 2, (HEIGHT - game_over_text.get_height()) // 2))
+            pygame.display.update()
 
+            # Wait for user input to either exit or restart the game
+            waiting_for_input = True
+            while waiting_for_input:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                        waiting_for_input = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            running = False
+                            waiting_for_input = False
+                        else:
+                            # Reset game state
+                            points = 0
+                            lifes = STARTING_LIFES
+                            # Reset ball and paddle positions
+                            ball.x, ball.y = (WIDTH - BALL_RAD) // 2, HEIGHT - 2 * PADY - PADDLE_HEIGHT - BALL_RAD
+                            BALL_VEL = [VEL_X, VEL_Y]
+                            paddle.x, paddle.y = (WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY
+                            # Reset blocks
+                            blocks = create_blocks()
+                            waiting_for_input = False
 
 
         # TODO: Check if player broke all the bricks
