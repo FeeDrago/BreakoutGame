@@ -30,7 +30,7 @@ def handle_paddle_movement(keys_pressed, paddle):
         paddle.x += PADDLE_VEL
     
 
-def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, points:int):
+def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, points:int, lifes:int):
     ball.x -= BALL_VEL[0]
     ball.y -= BALL_VEL[1]
 
@@ -60,20 +60,26 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
                 BRICK_SOUND.play()
 
     # Check for lost ball
-    
+    if ball.y + BALL_RAD > HEIGHT - PADY - PADDLE_HEIGHT and not ball.colliderect(paddle):
+        lifes -= 1
+        # Reset ball and paddle
+        ball.x, ball.y =(WIDTH - BALL_RAD)//2, HEIGHT - 2*PADY - PADDLE_HEIGHT - BALL_RAD
+        paddle.x, paddle.y  = (WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY
+        BALL_VEL[0] = abs(BALL_VEL[0])
+        BALL_VEL[1] = abs(BALL_VEL[1])
 
     
-    return points
+    return points, lifes
             
 
-def draw_window(blocks, points, paddle, ball):
+def draw_window(blocks, points,lifes,  paddle, ball):
 
     # re-fill the window with black to remove ball trail
     WIN.fill(BLACK)
 
 
     # Draw points and lifes
-    lifes_text = FONT.render(f'Lifes:{STARTING_LIFES}', 1 ,WHITE)
+    lifes_text = FONT.render(f'Lifes:{lifes}', 1 ,WHITE)
     points_text = FONT.render(f'Points:{points:03}', 1, WHITE)
     WIN.blit(lifes_text,(PADX, PADY))
     WIN.blit(points_text,(WIDTH - points_text.get_width() - PADX, PADY))
@@ -96,6 +102,7 @@ def draw_window(blocks, points, paddle, ball):
 
 def main():
     points = 0
+    lifes = STARTING_LIFES
     paddle = pygame.Rect((WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY, PADDLE_WIDTH, PADDLE_HEIGHT)
     blocks = create_blocks()
     ball = pygame.Rect((WIDTH - BALL_RAD)//2, HEIGHT - 2*PADY - PADDLE_HEIGHT - BALL_RAD, BALL_RAD, BALL_RAD)
@@ -111,10 +118,17 @@ def main():
         
         keys_pressed = pygame.key.get_pressed()
         handle_paddle_movement(keys_pressed, paddle)
-        points = handle_ball_movement(ball, paddle, blocks, points)
+        points, lifes = handle_ball_movement(ball, paddle, blocks, points, lifes)
 
 
-        draw_window(blocks, points, paddle, ball)
+        draw_window(blocks, points,lifes,  paddle, ball)
+
+        # TODO: Check if player lost.
+
+
+
+        # TODO: Check if player broke all the bricks
+
 
     pygame.quit()
 
