@@ -29,7 +29,7 @@ def handle_paddle_movement(keys_pressed, paddle):
         paddle.x += PADDLE_VEL
     
 
-def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, points):
+def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, points:int):
     ball.x -= BALL_VEL[0]
     ball.y -= BALL_VEL[1]
 
@@ -54,22 +54,12 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
         for block in row:
             if block.colliderect(ball):
                 points += COLOR_POINTS[row_index]
+                print(points)
                 BALL_VEL[1] *= -1
                 row.remove(block)
                 BRICK_SOUND.play()
-                
-
-    
-
-    
-    
-
-
-
-
-    
-
-
+    return points
+            
 
 def draw_window(blocks, points, paddle, ball):
 
@@ -116,7 +106,7 @@ def main():
         
         keys_pressed = pygame.key.get_pressed()
         handle_paddle_movement(keys_pressed, paddle)
-        handle_ball_movement(ball, paddle, blocks)
+        points = handle_ball_movement(ball, paddle, blocks, points)
 
 
         draw_window(blocks, points, paddle, ball)
