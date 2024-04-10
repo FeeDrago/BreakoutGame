@@ -1,8 +1,5 @@
 import pygame
 from constants import *
-from blocks import Block
-from paddle import Paddle
-from ball import Ball
 
 pygame.font.init()
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
