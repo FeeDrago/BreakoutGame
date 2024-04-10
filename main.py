@@ -1,7 +1,13 @@
 import pygame
 from constants import *
 
+# Initialization
 pygame.font.init()
+pygame.mixer.init()
+LOST_SOUND = pygame.mixer.Sound(r'./Sounds/lost.mp3')
+PADDLE_SOUND = pygame.mixer.Sound(r'./Sounds/paddle.mp3')
+WALL_SOUND = pygame.mixer.Sound(r'./Sounds/wall.mp3')
+BRICK_SOUND = pygame.mixer.Sound(r'./Sounds/brick.mp3')
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Breakout")
 FONT = pygame.font.SysFont('comicsans', 100)
@@ -21,12 +27,46 @@ def handle_paddle_movement(keys_pressed, paddle):
         paddle.x -= PADDLE_VEL
     elif keys_pressed[pygame.K_RIGHT] and paddle.left + paddle.width + PADDLE_VEL < WIDTH: # Go Right
         paddle.x += PADDLE_VEL
-    return paddle
+    
 
-def handle_ball_movement(ball):
+def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list):
     ball.x -= BALL_VEL[0]
     ball.y -= BALL_VEL[1]
-    return ball
+
+    # Wall Collision
+    if (int(ball.x + ball.width / 2) - BALL_RAD == 0) or (int(ball.x + ball.width / 2) + BALL_RAD == WIDTH ): 
+        BALL_VEL[0] *= -1
+        WALL_SOUND.play()
+    
+    # Roof Collision
+    if ball.y - BALL_RAD <= 0:
+        BALL_VEL[1] *= -1
+        WALL_SOUND.play()
+
+    # Paddle Collision
+    if ball.colliderect(paddle):
+        BALL_VEL[0] *= -1
+        BALL_VEL[1] *= -1
+        PADDLE_SOUND.play()
+    
+    # Block Collision
+    for row in blocks:
+        for block in row:
+            if block.colliderect(ball):
+                BALL_VEL[1] *= -1
+                row.remove(block)
+                BRICK_SOUND.play()
+                
+
+    
+
+    
+    
+
+
+
+
+    
 
 
 
@@ -74,8 +114,8 @@ def main():
 
         
         keys_pressed = pygame.key.get_pressed()
-        paddle = handle_paddle_movement(keys_pressed, paddle)
-        ball = handle_ball_movement(ball)
+        handle_paddle_movement(keys_pressed, paddle)
+        handle_ball_movement(ball, paddle, blocks)
 
 
         draw_window(blocks, points, paddle, ball)
