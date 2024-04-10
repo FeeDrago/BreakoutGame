@@ -18,15 +18,15 @@ def draw_window(blocks, points, paddle, ball):
     WIN.blit(points_text,(WIDTH - points_text.get_width() - PADX, PADY))
 
     # Draw Blocks
-    for row in blocks:
+    for row_index, row in enumerate(blocks):
         for block in row:
-            pygame.draw.rect(WIN, block.color, block)
+            pygame.draw.rect(WIN, COLORS[row_index], block)
     
     # Draw Paddle
-    pygame.draw.rect(WIN, paddle.color, paddle)
+    pygame.draw.rect(WIN, PADDLE_COLOR, paddle)
 
     # Draw Ball
-    pygame.draw.circle(WIN,color=ball.color, center=ball.center, radius=ball.radius)
+    pygame.draw.circle(WIN,color=WHITE, center=ball, radius=BALL_RAD)
 
 
 
@@ -39,9 +39,9 @@ def create_blocks() ->list:
     for row_index, row in enumerate(blocks):
         for i in range(NUM_OF_BLOCKS_PER_ROW):
             if i == 0:
-                row.append(Block(i*BLOCK_WIDTH, TOP_SPACE + (row_index * (BLOCK_HEIGHT + HORIZONTAL_BORDER)),  BLOCK_WIDTH, BLOCK_HEIGHT, COLORS[row_index]))
+                row.append(pygame.Rect(i*BLOCK_WIDTH, TOP_SPACE + (row_index * (BLOCK_HEIGHT + HORIZONTAL_BORDER)),  BLOCK_WIDTH, BLOCK_HEIGHT))
             else:
-                row.append(Block(i*(BLOCK_WIDTH + VERTICAL_BORDER), TOP_SPACE + (row_index * (BLOCK_HEIGHT + HORIZONTAL_BORDER)),  BLOCK_WIDTH, BLOCK_HEIGHT, COLORS[row_index]))
+                row.append(pygame.Rect(i*(BLOCK_WIDTH + VERTICAL_BORDER), TOP_SPACE + (row_index * (BLOCK_HEIGHT + HORIZONTAL_BORDER)),  BLOCK_WIDTH, BLOCK_HEIGHT))
     return blocks
 
 def handle_paddle_movement(keys_pressed, paddle):
@@ -54,10 +54,9 @@ def handle_paddle_movement(keys_pressed, paddle):
 
 def main():
     points = 0
-    paddle = Paddle(left=(WIDTH - PADDLE_WIDTH) // 2, top=HEIGHT - PADDLE_HEIGHT - PADY,
-                     width=PADDLE_WIDTH, height=PADDLE_HEIGHT, color=PADDLE_COLOR)
+    paddle = pygame.Rect((WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY, PADDLE_WIDTH, PADDLE_HEIGHT)
     blocks = create_blocks()
-    ball = Ball(center=((WIDTH - BALL_RAD)//2, HEIGHT - 2*PADY - PADDLE_HEIGHT - (BALL_RAD // 2) ))
+    ball = ((WIDTH - BALL_RAD)//2, HEIGHT - 2*PADY - PADDLE_HEIGHT - (BALL_RAD // 2))
     running = True
     clock = pygame.time.Clock()
     while running:
