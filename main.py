@@ -15,8 +15,8 @@ BRICK_SOUND = pygame.mixer.Sound(r'./Sounds/brick.mp3')
 FONT = pygame.font.SysFont('comicsans', 100)
 GAME_OVER_FONT = pygame.font.SysFont('comicsans', 25)
 
-
-
+FIRST_TIME_ROOF_COLLISION = True
+# ORANGE_HIT = pygame.USEREVENT + 1
 
 def create_blocks() ->list:
     blocks = [[] for row in range(NUM_OF_ROWS)]
@@ -33,7 +33,9 @@ def handle_paddle_movement(keys_pressed, paddle):
     
 
 def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, points:int, lifes:int):
-    global BALL_VEL
+    global BALL_VEL, FIRST_TIME_ROOF_COLLISION
+
+    # Move Ball
     ball.x -= BALL_VEL[0]
     ball.y -= BALL_VEL[1]
 
@@ -46,6 +48,9 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
     if ball.y - BALL_RAD <= 0:
         BALL_VEL[1] *= -1
         WALL_SOUND.play()
+        if FIRST_TIME_ROOF_COLLISION:
+            FIRST_TIME_ROOF_COLLISION = False
+            paddle.width = paddle.width // 2
 
     # Paddle Collision
     if ball.colliderect(paddle):
@@ -58,6 +63,10 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
         for block in row:
             if block.colliderect(ball):
                 points += COLOR_POINTS[row_index]
+                if COLORS[row_index] == ORANGE or COLORS[row_index] == RED:
+                    print(BALL_VEL)
+                    increase_ball_speed()
+                    print(BALL_VEL)
                 BALL_VEL[1] *= -1
                 row.remove(block)
                 BRICK_SOUND.play()
@@ -77,12 +86,16 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
     
     return points, lifes
             
+def increase_ball_speed():
+    global BALL_VEL
+    BALL_VEL[0] += 0.5 if BALL_VEL[0] > 0 else -0.5
+    BALL_VEL[1] += 0.5 if BALL_VEL[1] > 0 else -0.5
+    
 
 def draw_window(blocks, points,lifes,  paddle, ball):
 
     # re-fill the window with black to remove ball trail
     WIN.fill(BLACK)
-
 
     # Draw points and lifes
     lifes_text = FONT.render(f'Lifes:{lifes}', 1 ,WHITE)
