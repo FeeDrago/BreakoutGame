@@ -16,7 +16,8 @@ FONT = pygame.font.SysFont('comicsans', 100)
 GAME_OVER_FONT = pygame.font.SysFont('comicsans', 25)
 
 FIRST_TIME_ROOF_COLLISION = True
-# ORANGE_HIT = pygame.USEREVENT + 1
+ORANGE_HIT = False
+RED_HIT = False
 
 def create_blocks() ->list:
     blocks = [[] for row in range(NUM_OF_ROWS)]
@@ -33,7 +34,7 @@ def handle_paddle_movement(keys_pressed, paddle):
     
 
 def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, points:int, lifes:int):
-    global BALL_VEL, FIRST_TIME_ROOF_COLLISION
+    global BALL_VEL, FIRST_TIME_ROOF_COLLISION, ORANGE_HIT, RED_HIT
 
     # Move Ball
     ball.x -= BALL_VEL[0]
@@ -63,15 +64,20 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
         for block in row:
             if block.colliderect(ball):
                 points += COLOR_POINTS[row_index]
-                if COLORS[row_index] in [ORANGE, RED]:
+                if COLORS[row_index] == ORANGE and not ORANGE_HIT:
                     increase_ball_speed()
+                    ORANGE_HIT = True
+                elif COLORS[row_index] == RED and not RED_HIT:
+                    increase_ball_speed()
+                    RED_HIT = True
                 BALL_VEL[1] *= -1
                 row.remove(block)
                 BRICK_SOUND.play()
                 break
 
     # Check for lost ball
-    if ball.y + BALL_RAD > HEIGHT - PADY - PADDLE_HEIGHT and not ball.colliderect(paddle):
+    # if ball.y + BALL_RAD > HEIGHT - PADY - PADDLE_HEIGHT and not ball.colliderect(paddle):
+    if ball.y + BALL_RAD > HEIGHT:
         lifes -= 1
         if lifes > 0:
             # Reset ball and paddle
