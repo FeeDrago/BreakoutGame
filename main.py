@@ -40,12 +40,12 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
     ball.y -= BALL_VEL[1]
 
     # Wall Collision
-    if (int(ball.x + ball.width / 2) - BALL_RAD == 0) or (int(ball.x + ball.width / 2) + BALL_RAD == WIDTH ): 
+    if ball.left <= 0 or ball.right >= WIDTH:
         BALL_VEL[0] *= -1
         WALL_SOUND.play()
     
     # Roof Collision
-    if ball.y - BALL_RAD <= 0:
+    if ball.top <= 0:
         BALL_VEL[1] *= -1
         WALL_SOUND.play()
         if FIRST_TIME_ROOF_COLLISION:
@@ -54,42 +54,40 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
 
     # Paddle Collision
     if ball.colliderect(paddle):
-        BALL_VEL[0] *= -1
+        # BALL_VEL[0] *= -1
         BALL_VEL[1] *= -1
         PADDLE_SOUND.play()
-    
+
     # Block Collision
     for row_index, row in enumerate(blocks):
         for block in row:
             if block.colliderect(ball):
                 points += COLOR_POINTS[row_index]
-                if COLORS[row_index] == ORANGE or COLORS[row_index] == RED:
-                    print(BALL_VEL)
+                if COLORS[row_index] in [ORANGE, RED]:
                     increase_ball_speed()
-                    print(BALL_VEL)
                 BALL_VEL[1] *= -1
                 row.remove(block)
                 BRICK_SOUND.play()
+                break
 
     # Check for lost ball
     if ball.y + BALL_RAD > HEIGHT - PADY - PADDLE_HEIGHT and not ball.colliderect(paddle):
         lifes -= 1
-        # Reset ball and paddle
-        ball.x, ball.y =(WIDTH - BALL_RAD)//2, HEIGHT - 2*PADY - PADDLE_HEIGHT - BALL_RAD
-        paddle.x, paddle.y  = (WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY
         if lifes > 0:
-            BALL_VEL[0] = abs(BALL_VEL[0])
-            BALL_VEL[1] = abs(BALL_VEL[1])
-        else: 
-            BALL_VEL = [0, 0]
+            # Reset ball and paddle
+            ball.x, ball.y = (WIDTH - BALL_RAD)//2, HEIGHT - 2*PADY - PADDLE_HEIGHT - BALL_RAD
+            BALL_VEL = [abs(BALL_VEL[0]), abs(BALL_VEL[1])]
+            paddle.x, paddle.y = (WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY
+        else:
+            BALL_VEL = [0, 0]  # Stop the ball if no lives left
 
     
     return points, lifes
             
 def increase_ball_speed():
     global BALL_VEL
-    BALL_VEL[0] += 0.5 if BALL_VEL[0] > 0 else -0.5
-    BALL_VEL[1] += 0.5 if BALL_VEL[1] > 0 else -0.5
+    BALL_VEL[0] += SPEED_INCR if BALL_VEL[0] > 0 else -SPEED_INCR
+    BALL_VEL[1] += SPEED_INCR if BALL_VEL[1] > 0 else -SPEED_INCR
     
 
 def draw_window(blocks, points,lifes,  paddle, ball):
@@ -163,10 +161,13 @@ def main():
                             # Reset game state
                             points = 0
                             lifes = STARTING_LIFES
+                            FIRST_TIME_ROOF_COLLISION = True
                             # Reset ball and paddle positions
                             ball.x, ball.y = (WIDTH - BALL_RAD) // 2, HEIGHT - 2 * PADY - PADDLE_HEIGHT - BALL_RAD
                             BALL_VEL = [VEL_X, VEL_Y]
+                            print(BALL_VEL)
                             paddle.x, paddle.y = (WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY
+                            paddle.width = PADDLE_WIDTH
                             # Reset blocks
                             blocks = create_blocks()
                             waiting_for_input = False
