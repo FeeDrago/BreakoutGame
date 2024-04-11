@@ -42,12 +42,19 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
     ball.y -= BALL_VEL[1]
 
     # Wall Collision
-    if ball.left <= 0 or ball.right >= WIDTH:
+    if ball.left <= 0:
+        ball.left = 0
+        BALL_VEL[0] *= -1
+        WALL_SOUND.play()
+
+    elif ball.right >= WIDTH:
+        ball.right = WIDTH
         BALL_VEL[0] *= -1
         WALL_SOUND.play()
     
     # Roof Collision
     if ball.top <= 0:
+        ball.top = 0
         BALL_VEL[1] *= -1
         WALL_SOUND.play()
         if FIRST_TIME_ROOF_COLLISION:
@@ -56,9 +63,30 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
 
     # Paddle Collision
     if ball.colliderect(paddle):
-        # BALL_VEL[0] *= -1
-        BALL_VEL[1] *= -1
-        PADDLE_SOUND.play()
+        # Check if the bottom of the ball is close to the top of the paddle
+        if ball.bottom >= paddle.top - 5 and ball.bottom <= paddle.top + 5:
+            # Check if the center of the ball is within the horizontal boundaries of the paddle
+            if paddle.left <= ball.centerx <= paddle.right:
+                BALL_VEL[1] *= -1  # Reverse the vertical velocity
+                PADDLE_SOUND.play()
+
+                # Adjust the horizontal velocity based on where it hits the paddle
+                ball_center = ball.centerx
+                paddle_center = paddle.centerx
+                offset = ball_center - paddle_center  # Calculate the offset from the center of the paddle
+                max_offset = paddle.width / 2  # Maximum offset from the center of the paddle
+
+                # Calculate the proportion of the maximum offset
+                offset_factor = offset / max_offset
+
+                # Adjust the horizontal velocity based on the offset factor
+                if offset_factor < -0.5:
+                    BALL_VEL[0] = -abs(BALL_VEL[0])  # Move to the left
+                elif offset_factor > 0.5:
+                    BALL_VEL[0] = abs(BALL_VEL[0])  # Move to the right
+
+
+    
 
     # Block Collision
     for row_index, row in enumerate(blocks):
@@ -174,11 +202,11 @@ def game_over(paddle, ball, blocks, points, lifes, lost, running):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                return lifes, points, running
+                return lifes, points, running, blocks
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
-                    return lifes, points, running
+                    return lifes, points, running, blocks
                 else:
                     # Reset the game and return new lifes and points
                     lifes, points, blocks = reset_game(paddle, ball, blocks, points, lifes)
