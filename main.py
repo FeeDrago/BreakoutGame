@@ -18,6 +18,7 @@ GAME_OVER_FONT = pygame.font.SysFont('comicsans', 25)
 FIRST_TIME_ROOF_COLLISION = True
 ORANGE_HIT = False
 RED_HIT = False
+GAME_FINISHED = pygame.USEREVENT + 1
 
 def create_blocks() ->list:
     blocks = [[] for row in range(NUM_OF_ROWS)]
@@ -34,7 +35,7 @@ def handle_paddle_movement(keys_pressed, paddle):
     
 
 def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, points:int, lifes:int):
-    global BALL_VEL, FIRST_TIME_ROOF_COLLISION, ORANGE_HIT, RED_HIT
+    global BALL_VEL, FIRST_TIME_ROOF_COLLISION, ORANGE_HIT, RED_HIT, test
 
     # Move Ball
     ball.x -= BALL_VEL[0]
@@ -74,6 +75,12 @@ def handle_ball_movement(ball:pygame.Rect, paddle:pygame.Rect, blocks:list, poin
                 row.remove(block)
                 BRICK_SOUND.play()
                 break
+
+
+    # Check if all bricks are broken
+    if not any(any(block for block in row) for row in blocks):
+        pygame.event.post(pygame.event.Event(GAME_FINISHED))
+        return points, lifes
 
     # Check for lost ball
     # if ball.y + BALL_RAD > HEIGHT - PADY - PADDLE_HEIGHT and not ball.colliderect(paddle):
@@ -135,8 +142,8 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
-
+            elif event.type == GAME_FINISHED:
+                lifes, points, running, blocks = game_over(paddle, ball, blocks, points, lifes, False, running)
         
         keys_pressed = pygame.key.get_pressed()
         handle_paddle_movement(keys_pressed, paddle)
@@ -145,45 +152,54 @@ def main():
 
         draw_window(blocks, points,lifes,  paddle, ball)
 
-        # TODO: Check if player lost.
+        # Check if player lost
         if lifes == 0:
-            LOST_SOUND.play()
-            game_over_text = GAME_OVER_FONT.render('You Lost! Press ESC to exit or any other key to play again.', 1, WHITE)
-            WIN.blit(game_over_text, ((WIDTH - game_over_text.get_width()) // 2, (HEIGHT - game_over_text.get_height()) // 2))
-            pygame.display.update()
+            lifes, points, running, blocks = game_over(paddle, ball, blocks, points, lifes, True, running)
+            
 
-            # Wait for user input to either exit or restart the game
-            waiting_for_input = True
-            while waiting_for_input:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-                        waiting_for_input = False
-                    elif event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_ESCAPE:
-                            running = False
-                            waiting_for_input = False
-                        else:
-                            # Reset game state
-                            points = 0
-                            lifes = STARTING_LIFES
-                            FIRST_TIME_ROOF_COLLISION = True
-                            # Reset ball and paddle positions
-                            ball.x, ball.y = (WIDTH - BALL_RAD) // 2, HEIGHT - 2 * PADY - PADDLE_HEIGHT - BALL_RAD
-                            BALL_VEL = [VEL_X, VEL_Y]
-                            print(BALL_VEL)
-                            paddle.x, paddle.y = (WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY
-                            paddle.width = PADDLE_WIDTH
-                            # Reset blocks
-                            blocks = create_blocks()
-                            waiting_for_input = False
-
-
-        # TODO: Check if player broke all the bricks
-
+                
+            
 
     pygame.quit()
 
+def game_over(paddle, ball, blocks, points, lifes, lost, running):
+    if lost:
+        LOST_SOUND.play()
+    game_over_text = GAME_OVER_FONT.render(f'You {"Lost" if lost else "Won"}! Press ESC to exit or any other key to play again.', 1, WHITE)
+    WIN.blit(game_over_text, ((WIDTH - game_over_text.get_width()) // 2, (HEIGHT - game_over_text.get_height()) // 2))
+    pygame.display.update()
+
+    # Wait for user input to either exit or restart the game
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                return lifes, points, running
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                    return lifes, points, running
+                else:
+                    # Reset the game and return new lifes and points
+                    lifes, points, blocks = reset_game(paddle, ball, blocks, points, lifes)
+                    return lifes,points, running, blocks
+
+
+
+def reset_game(paddle, ball, blocks, points, lifes):
+    global FIRST_TIME_ROOF_COLLISION, ORANGE_HIT, RED_HIT, BALL_VEL
+    points = 0
+    lifes = STARTING_LIFES
+    FIRST_TIME_ROOF_COLLISION = True
+    ORANGE_HIT, RED_HIT = False, False
+    # Reset ball and paddle positions
+    ball.x, ball.y = (WIDTH - BALL_RAD) // 2, HEIGHT - 2 * PADY - PADDLE_HEIGHT - BALL_RAD
+    BALL_VEL = [VEL_X, VEL_Y]
+    paddle.x, paddle.y = (WIDTH - PADDLE_WIDTH) // 2, HEIGHT - PADDLE_HEIGHT - PADY
+    paddle.width = PADDLE_WIDTH
+    # Reset blocks
+    blocks = create_blocks()
+    return lifes, points, blocks
 
 if __name__ == '__main__':
     main()
